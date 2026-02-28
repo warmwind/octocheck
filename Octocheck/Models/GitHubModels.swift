@@ -61,6 +61,11 @@ struct GitHubRepo: Decodable, Identifiable {
     }
 }
 
+struct GitHubBranch: Decodable, Identifiable {
+    var id: String { name }
+    let name: String
+}
+
 struct GitHubErrorResponse: Decodable {
     let message: String
 }

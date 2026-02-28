@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RepoRowView: View {
     let repo: MonitoredRepo
+    let branch: String
     let status: CIStatus
     let onOpen: () -> Void
 
@@ -15,7 +16,7 @@ struct RepoRowView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(repo.fullName)
                     .font(.system(size: 13, weight: .medium))
-                Text(status.label)
+                Text("\(branch) — \(status.label)")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }

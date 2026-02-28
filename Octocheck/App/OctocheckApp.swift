@@ -24,9 +24,6 @@ struct OctocheckApp: App {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Request notification permissions (safe after app fully launched)
-        NotificationService.shared.requestPermission()
-
         // Start polling if token exists
         if KeychainService.shared.loadPAT() != nil {
             Task { @MainActor in

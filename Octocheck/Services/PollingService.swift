@@ -124,6 +124,22 @@ final class RepoStore: ObservableObject {
         save()
     }
 
+    func addBranch(to repoID: String, branch: String) {
+        guard let index = repos.firstIndex(where: { $0.id == repoID }) else { return }
+        guard !repos[index].branches.contains(branch) else { return }
+        repos[index].branches.append(branch)
+        save()
+    }
+
+    func removeBranch(from repoID: String, branch: String) {
+        guard let index = repos.firstIndex(where: { $0.id == repoID }) else { return }
+        repos[index].branches.removeAll { $0 == branch }
+        if repos[index].branches.isEmpty {
+            repos.remove(at: index)
+        }
+        save()
+    }
+
     private func save() {
         if let data = try? JSONEncoder().encode(repos) {
             UserDefaults.standard.set(data, forKey: Constants.UserDefaultsKeys.monitoredRepos)

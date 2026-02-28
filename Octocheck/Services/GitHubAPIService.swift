@@ -96,12 +96,12 @@ final class GitHubAPIService {
         return allRepos
     }
 
-    /// Fetch the latest workflow run for a repo's default branch.
-    func fetchLatestWorkflowRun(repo: MonitoredRepo) async throws -> WorkflowRun? {
+    /// Fetch the latest workflow run for a repo on a specific branch.
+    func fetchLatestWorkflowRun(repo: MonitoredRepo, branch: String) async throws -> WorkflowRun? {
         let request = try makeRequest(
             path: "/repos/\(repo.owner)/\(repo.name)/actions/runs",
             queryItems: [
-                URLQueryItem(name: "branch", value: repo.defaultBranch),
+                URLQueryItem(name: "branch", value: branch),
                 URLQueryItem(name: "per_page", value: "1"),
             ]
         )
@@ -111,30 +111,45 @@ final class GitHubAPIService {
         return result.workflowRuns.first
     }
 
-    /// Fetch CI status for a single repo.
-    func fetchStatus(for repo: MonitoredRepo) async throws -> CIStatus {
-        guard let run = try await fetchLatestWorkflowRun(repo: repo) else {
+    /// Fetch CI status for a single repo+branch.
+    func fetchStatus(for repo: MonitoredRepo, branch: String) async throws -> CIStatus {
+        guard let run = try await fetchLatestWorkflowRun(repo: repo, branch: branch) else {
             return .unknown
         }
         return run.ciStatus
     }
 
-    /// Fetch statuses for all repos concurrently.
+    /// Fetch statuses for all repos × branches concurrently. Keys are "owner/name:branch".
     func fetchAllStatuses(repos: [MonitoredRepo]) async -> [String: CIStatus] {
         await withTaskGroup(of: (String, CIStatus).self) { group in
             for repo in repos {
-                group.addTask {
-                    let status = (try? await self.fetchStatus(for: repo)) ?? .unknown
-                    return (repo.id, status)
+                for branch in repo.branches {
+                    group.addTask {
+                        let status = (try? await self.fetchStatus(for: repo, branch: branch)) ?? .unknown
+                        return (repo.statusKey(branch: branch), status)
+                    }
                 }
             }
 
             var results: [String: CIStatus] = [:]
-            for await (id, status) in group {
-                results[id] = status
+            for await (key, status) in group {
+                results[key] = status
             }
             return results
         }
+    }
+
+    /// Fetch branches for a repo.
+    func fetchBranches(owner: String, name: String) async throws -> [GitHubBranch] {
+        let request = try makeRequest(
+            path: "/repos/\(owner)/\(name)/branches",
+            queryItems: [
+                URLQueryItem(name: "per_page", value: "100"),
+            ]
+        )
+        let (data, response) = try await performRequest(request)
+        try checkHTTPResponse(response, data: data)
+        return try decoder.decode([GitHubBranch].self, from: data)
     }
 
     // MARK: - Private Helpers

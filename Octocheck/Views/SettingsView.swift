@@ -14,7 +14,7 @@ struct SettingsView: View {
             reposTab
                 .tabItem { Label("Repositories", systemImage: "list.bullet") }
         }
-        .frame(width: 480, height: 360)
+        .frame(width: 480, height: 440)
     }
 
     // MARK: - General Tab
@@ -118,22 +118,66 @@ struct SettingsView: View {
                             .font(.callout)
                     } else {
                         ForEach(viewModel.repos) { repo in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(repo.fullName)
-                                        .font(.body)
-                                    Text("Branch: \(repo.defaultBranch)")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                            DisclosureGroup(
+                                isExpanded: Binding(
+                                    get: { viewModel.expandedRepos.contains(repo.id) },
+                                    set: { expanded in
+                                        if expanded {
+                                            viewModel.expandedRepos.insert(repo.id)
+                                        } else {
+                                            viewModel.expandedRepos.remove(repo.id)
+                                        }
+                                    }
+                                )
+                            ) {
+                                // Tracked branches
+                                ForEach(repo.branches, id: \.self) { branch in
+                                    HStack {
+                                        Image(systemName: "arrow.branch")
+                                            .foregroundStyle(.secondary)
+                                            .font(.caption)
+                                        Text(branch)
+                                            .font(.callout)
+                                        Spacer()
+                                        if repo.branches.count > 1 {
+                                            Button {
+                                                viewModel.removeBranch(from: repo, branch: branch)
+                                            } label: {
+                                                Image(systemName: "minus.circle.fill")
+                                                    .foregroundStyle(.red)
+                                                    .font(.caption)
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
+                                    }
+                                    .padding(.leading, 8)
                                 }
-                                Spacer()
-                                Button(role: .destructive) {
-                                    viewModel.removeRepo(repo)
-                                } label: {
-                                    Image(systemName: "minus.circle.fill")
-                                        .foregroundStyle(.red)
+
+                                // Add branch
+                                BranchInputView(
+                                    onAdd: { branch in
+                                        viewModel.addBranch(to: repo, branch: branch)
+                                    }
+                                )
+                                .padding(.leading, 8)
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        Text(repo.fullName)
+                                            .font(.body)
+                                        Text("\(repo.branches.count) branch\(repo.branches.count == 1 ? "" : "es")")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Button(role: .destructive) {
+                                        viewModel.removeRepo(repo)
+                                    } label: {
+                                        Image(systemName: "minus.circle.fill")
+                                            .foregroundStyle(.red)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -215,5 +259,39 @@ struct SettingsView: View {
                 viewModel.loadAvailableRepos()
             }
         }
+    }
+}
+
+// MARK: - Branch Picker
+
+private struct BranchInputView: View {
+    let onAdd: (String) -> Void
+
+    @State private var branchName = ""
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "plus.circle")
+                .foregroundStyle(.green)
+                .font(.caption)
+            TextField("Branch name...", text: $branchName)
+                .textFieldStyle(.roundedBorder)
+                .font(.callout)
+                .onSubmit {
+                    addBranch()
+                }
+            Button("Add") {
+                addBranch()
+            }
+            .disabled(branchName.trimmingCharacters(in: .whitespaces).isEmpty)
+            .font(.callout)
+        }
+    }
+
+    private func addBranch() {
+        let name = branchName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return }
+        onAdd(name)
+        branchName = ""
     }
 }

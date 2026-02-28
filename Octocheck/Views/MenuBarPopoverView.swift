@@ -52,21 +52,17 @@ struct MenuBarPopoverView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 20)
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(viewModel.repos) { repo in
-                            RepoRowView(
-                                repo: repo,
-                                status: viewModel.status(for: repo),
-                                onOpen: { viewModel.openInGitHub(repo) }
-                            )
-                            if repo.id != viewModel.repos.last?.id {
-                                Divider().padding(.horizontal, 8)
-                            }
-                        }
-                    }
+                List(viewModel.repoBranchRows, id: \.id) { row in
+                    RepoRowView(
+                        repo: row.repo,
+                        branch: row.branch,
+                        status: viewModel.status(for: row.repo, branch: row.branch),
+                        onOpen: { viewModel.openInGitHub(row.repo, branch: row.branch) }
+                    )
+                    .listRowInsets(EdgeInsets())
                 }
-                .frame(maxHeight: 300)
+                .listStyle(.plain)
+                .frame(maxHeight: 400)
             }
 
             Divider()

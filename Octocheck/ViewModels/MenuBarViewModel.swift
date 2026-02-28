@@ -27,17 +27,31 @@ final class MenuBarViewModel: ObservableObject {
             .assign(to: &$error)
     }
 
-    func status(for repo: MonitoredRepo) -> CIStatus {
-        repoStatuses[repo.id] ?? .unknown
+    func status(for repo: MonitoredRepo, branch: String) -> CIStatus {
+        repoStatuses[repo.statusKey(branch: branch)] ?? .unknown
     }
 
     func refreshNow() {
         pollingService.refreshNow()
     }
 
-    func openInGitHub(_ repo: MonitoredRepo) {
-        if let url = repo.actionsURL {
+    func openInGitHub(_ repo: MonitoredRepo, branch: String) {
+        if let url = repo.actionsURL(branch: branch) {
             NSWorkspace.shared.open(url)
+        }
+    }
+
+    struct RepoBranchRow: Identifiable {
+        let id: String
+        let repo: MonitoredRepo
+        let branch: String
+    }
+
+    var repoBranchRows: [RepoBranchRow] {
+        repos.flatMap { repo in
+            repo.branches.map { branch in
+                RepoBranchRow(id: repo.statusKey(branch: branch), repo: repo, branch: branch)
+            }
         }
     }
 

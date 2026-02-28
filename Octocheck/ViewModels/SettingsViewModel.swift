@@ -16,6 +16,10 @@ final class SettingsViewModel: ObservableObject {
     @Published var repoSearchText: String = ""
     @Published var repoError: String?
 
+    @Published var repoBranches: [String: [GitHubBranch]] = [:]
+    @Published var isLoadingBranches: [String: Bool] = [:]
+    @Published var expandedRepos: Set<String> = []
+
     @Published var pollingInterval: Double = Constants.Defaults.pollingInterval
     @Published var launchAtLogin = false
     @Published var notificationsEnabled = true
@@ -108,7 +112,7 @@ final class SettingsViewModel: ObservableObject {
         let repo = MonitoredRepo(
             owner: String(parts[0]),
             name: String(parts[1]),
-            defaultBranch: ghRepo.defaultBranch
+            branches: [ghRepo.defaultBranch]
         )
         repoStore.add(repo)
         PollingService.shared.refreshNow()
@@ -120,6 +124,38 @@ final class SettingsViewModel: ObservableObject {
 
     func removeRepos(at offsets: IndexSet) {
         repoStore.remove(at: offsets)
+    }
+
+    func addBranch(to repo: MonitoredRepo, branch: String) {
+        repoStore.addBranch(to: repo.id, branch: branch)
+        PollingService.shared.refreshNow()
+    }
+
+    func removeBranch(from repo: MonitoredRepo, branch: String) {
+        repoStore.removeBranch(from: repo.id, branch: branch)
+        PollingService.shared.refreshNow()
+    }
+
+    func loadBranches(for repo: MonitoredRepo) {
+        guard isLoadingBranches[repo.id] != true else { return }
+        isLoadingBranches[repo.id] = true
+
+        Task {
+            do {
+                let branches = try await GitHubAPIService.shared.fetchBranches(
+                    owner: repo.owner, name: repo.name
+                )
+                repoBranches[repo.id] = branches
+            } catch {
+                repoError = error.localizedDescription
+            }
+            isLoadingBranches[repo.id] = false
+        }
+    }
+
+    func availableBranches(for repo: MonitoredRepo) -> [GitHubBranch] {
+        let tracked = Set(repo.branches)
+        return (repoBranches[repo.id] ?? []).filter { !tracked.contains($0.name) }
     }
 
     func savePollingInterval() {

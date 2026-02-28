@@ -1,28 +1,22 @@
 import Foundation
-import UserNotifications
+import AppKit
 
-final class NotificationService {
+final class NotificationService: NSObject {
     static let shared = NotificationService()
-    private init() {}
+    private override init() { super.init() }
 
     func requestPermission() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        // No permission needed for NSUserNotificationCenter
     }
 
     func notifyStatusChange(repoID: String, from oldStatus: CIStatus, to newStatus: CIStatus) {
         let enabled = UserDefaults.standard.bool(forKey: Constants.UserDefaultsKeys.notificationsEnabled)
         guard enabled else { return }
 
-        let content = UNMutableNotificationContent()
-        content.title = "Octocheck"
-        content.body = "\(repoID): \(oldStatus.label) → \(newStatus.label)"
-        content.sound = .default
-
-        let request = UNNotificationRequest(
-            identifier: "\(repoID)-\(Date().timeIntervalSince1970)",
-            content: content,
-            trigger: nil
-        )
-        UNUserNotificationCenter.current().add(request)
+        let notification = NSUserNotification()
+        notification.title = "Octocheck"
+        notification.informativeText = "\(repoID): \(oldStatus.label) → \(newStatus.label)"
+        notification.soundName = NSUserNotificationDefaultSoundName
+        NSUserNotificationCenter.default.deliver(notification)
     }
 }
