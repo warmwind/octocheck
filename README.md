@@ -29,7 +29,7 @@ Click the icon to see a breakdown of each repo and branch, open any repo's Actio
 ## Requirements
 
 - macOS 13 (Ventura) or later
-- A GitHub Personal Access Token with `repo` scope (or `public_repo` for public repos only)
+- A GitHub Fine-grained Personal Access Token with **Actions** read-only permission
 
 ## Getting Started
 
@@ -90,10 +90,12 @@ Open **Settings → General** to:
 
 ### Creating a GitHub PAT
 
-1. Go to [GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)](https://github.com/settings/tokens)
-2. Click **Generate new token (classic)**
-3. Select the `repo` scope (for private repos) or `public_repo` (for public repos only)
-4. Copy the token and paste it into **Settings → Authentication** in Octocheck
+1. Go to [GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens](https://github.com/settings/personal-access-tokens/new)
+2. Click **Generate new token**
+3. Set a token name and expiration
+4. Under **Repository access**, select the repos you want to monitor (or **All repositories**)
+5. Under **Permissions → Repository permissions**, set **Actions** to **Read-only**
+6. Click **Generate token**, copy it, and paste it into **Settings → Authentication** in Octocheck
 
 ## Status Indicators
 
