@@ -2,6 +2,10 @@
 
 A lightweight macOS menu bar app that monitors GitHub Actions CI status across your repositories at a glance.
 
+<p align="center">
+  <img src="screenshot.png" width="300" alt="Octocheck screenshot">
+</p>
+
 ## What It Does
 
 Octocheck sits in your menu bar and continuously polls GitHub Actions for the latest workflow status on your selected repositories. The menu bar icon reflects the aggregate state — orange while any build is running, red if anything fails, green when everything passes.
