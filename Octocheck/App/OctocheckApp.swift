@@ -11,11 +11,18 @@ struct OctocheckApp: App {
         MenuBarExtra {
             MenuBarPopoverView()
         } label: {
-            let status = pollingService.aggregateStatus
-            Image(nsImage: coloredMenuBarImage(
-                systemName: status.sfSymbol,
-                color: status.nsColor
-            ))
+            if pollingService.isLoading {
+                Image(nsImage: coloredMenuBarImage(
+                    systemName: "arrow.triangle.2.circlepath",
+                    color: .systemOrange
+                ))
+            } else {
+                let status = pollingService.aggregateStatus
+                Image(nsImage: coloredMenuBarImage(
+                    systemName: status.sfSymbol,
+                    color: status.nsColor
+                ))
+            }
         }
         .menuBarExtraStyle(.window)
 

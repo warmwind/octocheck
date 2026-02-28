@@ -53,12 +53,12 @@ enum CIStatus: String, Codable, CaseIterable {
         }
     }
 
-    /// Aggregate multiple statuses: any failure → failure, else any running → running,
+    /// Aggregate multiple statuses: any running → running, else any failure → failure,
     /// else all success → success, else unknown.
     static func aggregate(_ statuses: [CIStatus]) -> CIStatus {
         guard !statuses.isEmpty else { return .unknown }
-        if statuses.contains(.failure) { return .failure }
         if statuses.contains(.running) { return .running }
+        if statuses.contains(.failure) { return .failure }
         if statuses.allSatisfy({ $0 == .success }) { return .success }
         return .unknown
     }

@@ -10,6 +10,7 @@ final class PollingService: ObservableObject {
     @Published var aggregateStatus: CIStatus = .unknown
     @Published var lastUpdated: Date?
     @Published var isPolling = false
+    @Published var isLoading = false
     @Published var error: String?
 
     private var pollingTask: Task<Void, Never>?
@@ -65,12 +66,14 @@ final class PollingService: ObservableObject {
             return
         }
 
+        isLoading = true
         let previousStatuses = repoStatuses
         let results = await GitHubAPIService.shared.fetchAllStatuses(repos: repos)
 
         repoStatuses = results
         aggregateStatus = CIStatus.aggregate(Array(results.values))
         lastUpdated = Date()
+        isLoading = false
         error = nil
 
         // Notify on status transitions
