@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @StateObject private var viewModel = SettingsViewModel()
+    @ObservedObject private var viewModel = SettingsViewModel.shared
 
     var body: some View {
         TabView {
@@ -101,48 +101,118 @@ struct SettingsView: View {
 
     private var reposTab: some View {
         VStack(spacing: 0) {
-            // Add repo
-            HStack {
-                TextField("owner/repo", text: $viewModel.newRepoInput)
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit { viewModel.addRepo() }
-
-                Button(viewModel.isAddingRepo ? "Adding..." : "Add") {
-                    viewModel.addRepo()
-                }
-                .disabled(viewModel.newRepoInput.isEmpty || viewModel.isAddingRepo)
-            }
-            .padding()
-
             if let error = viewModel.repoError {
                 Text(error)
                     .foregroundStyle(.red)
                     .font(.caption)
                     .padding(.horizontal)
+                    .padding(.top, 8)
             }
 
-            // Repo list
             List {
-                ForEach(viewModel.repos) { repo in
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(repo.fullName)
-                                .font(.body)
-                            Text("Branch: \(repo.defaultBranch)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                // Monitored repos
+                Section("Monitored") {
+                    if viewModel.repos.isEmpty {
+                        Text("No repositories added yet")
+                            .foregroundStyle(.secondary)
+                            .font(.callout)
+                    } else {
+                        ForEach(viewModel.repos) { repo in
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text(repo.fullName)
+                                        .font(.body)
+                                    Text("Branch: \(repo.defaultBranch)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Button(role: .destructive) {
+                                    viewModel.removeRepo(repo)
+                                } label: {
+                                    Image(systemName: "minus.circle.fill")
+                                        .foregroundStyle(.red)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
-                        Spacer()
-                        Button(role: .destructive) {
-                            viewModel.removeRepo(repo)
-                        } label: {
-                            Image(systemName: "trash")
-                                .foregroundStyle(.red)
-                        }
-                        .buttonStyle(.plain)
                     }
                 }
-                .onDelete(perform: viewModel.removeRepos)
+
+                // Available repos to add
+                Section {
+                    if viewModel.isLoadingRepos {
+                        HStack {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Loading repositories...")
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else if viewModel.availableRepos.isEmpty {
+                        Button("Load Your Repositories") {
+                            viewModel.loadAvailableRepos()
+                        }
+                    } else {
+                        TextField("Search repos...", text: $viewModel.repoSearchText)
+                            .textFieldStyle(.roundedBorder)
+
+                        let results = viewModel.filteredAvailableRepos
+                        if viewModel.repoSearchText.isEmpty {
+                            Text("\(results.count) repos available — type to search")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else if results.isEmpty {
+                            Text("No matching repos")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(results.prefix(20)) { ghRepo in
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        Text(ghRepo.fullName)
+                                            .font(.body)
+                                        Text(ghRepo.defaultBranch)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Button {
+                                        viewModel.addRepo(ghRepo)
+                                    } label: {
+                                        Image(systemName: "plus.circle.fill")
+                                            .foregroundStyle(.green)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            if results.count > 20 {
+                                Text("\(results.count - 20) more — refine your search")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                } header: {
+                    HStack {
+                        Text("Available")
+                        Spacer()
+                        if !viewModel.availableRepos.isEmpty {
+                            Button {
+                                viewModel.loadAvailableRepos()
+                            } label: {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.caption)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+        }
+        .onAppear {
+            if KeychainService.shared.loadPAT() != nil && viewModel.availableRepos.isEmpty {
+                viewModel.loadAvailableRepos()
             }
         }
     }

@@ -1,72 +1,41 @@
 import Foundation
-import Security
 
-enum KeychainError: LocalizedError {
-    case saveFailed(OSStatus)
-    case loadFailed
-    case deleteFailed(OSStatus)
-
-    var errorDescription: String? {
-        switch self {
-        case .saveFailed(let status):
-            return "Failed to save to Keychain (status: \(status))"
-        case .loadFailed:
-            return "Failed to load from Keychain"
-        case .deleteFailed(let status):
-            return "Failed to delete from Keychain (status: \(status))"
-        }
-    }
-}
-
+/// Stores the GitHub PAT in a file under Application Support with 600 permissions.
+/// This avoids Keychain prompts that occur with unsigned/ad-hoc signed builds.
 final class KeychainService {
     static let shared = KeychainService()
     private init() {}
 
-    private var baseQuery: [String: Any] {
-        [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: Constants.Keychain.service,
-            kSecAttrAccount as String: Constants.Keychain.account,
-        ]
+    private var storageURL: URL {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let dir = appSupport.appendingPathComponent(Constants.appName, isDirectory: true)
+        return dir.appendingPathComponent(".token")
     }
 
     func savePAT(_ token: String) throws {
-        guard let data = token.data(using: .utf8) else { return }
+        let dir = storageURL.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
-        // Delete existing item first
-        SecItemDelete(baseQuery as CFDictionary)
+        let data = Data(token.utf8)
+        try data.write(to: storageURL, options: [.atomic, .completeFileProtection])
 
-        var query = baseQuery
-        query[kSecValueData as String] = data
-        query[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlocked
-
-        let status = SecItemAdd(query as CFDictionary, nil)
-        guard status == errSecSuccess else {
-            throw KeychainError.saveFailed(status)
-        }
+        // Restrict file permissions to owner read/write only (0600)
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o600],
+            ofItemAtPath: storageURL.path
+        )
     }
 
     func loadPAT() -> String? {
-        var query = baseQuery
-        query[kSecReturnData as String] = true
-        query[kSecMatchLimit as String] = kSecMatchLimitOne
-
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-
-        guard status == errSecSuccess,
-              let data = result as? Data,
-              let token = String(data: data, encoding: .utf8)
-        else {
-            return nil
-        }
+        guard let data = try? Data(contentsOf: storageURL),
+              let token = String(data: data, encoding: .utf8),
+              !token.isEmpty
+        else { return nil }
         return token
     }
 
     func deletePAT() throws {
-        let status = SecItemDelete(baseQuery as CFDictionary)
-        guard status == errSecSuccess || status == errSecItemNotFound else {
-            throw KeychainError.deleteFailed(status)
-        }
+        guard FileManager.default.fileExists(atPath: storageURL.path) else { return }
+        try FileManager.default.removeItem(at: storageURL)
     }
 }

@@ -8,15 +8,15 @@ final class MenuBarViewModel: ObservableObject {
     @Published var lastUpdated: Date?
     @Published var error: String?
 
-    private var cancellables = Set<AnyCancellable>()
+    @Published var repos: [MonitoredRepo] = []
+
     private let pollingService = PollingService.shared
     private let repoStore = RepoStore.shared
 
-    var repos: [MonitoredRepo] {
-        repoStore.repos
-    }
-
     init() {
+        repos = repoStore.repos
+        repoStore.$repos
+            .assign(to: &$repos)
         pollingService.$repoStatuses
             .assign(to: &$repoStatuses)
         pollingService.$aggregateStatus

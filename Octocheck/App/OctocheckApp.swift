@@ -14,9 +14,11 @@ struct OctocheckApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Settings {
+        Window("Octocheck Settings", id: "settings") {
             SettingsView()
         }
+        .defaultSize(width: 480, height: 360)
+        .windowResizability(.contentSize)
     }
 }
 

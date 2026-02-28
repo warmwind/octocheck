@@ -71,6 +71,31 @@ final class GitHubAPIService {
         return try decoder.decode(GitHubRepo.self, from: data)
     }
 
+    /// Fetch all repos accessible to the authenticated user (paginated, up to 200).
+    func fetchUserRepos() async throws -> [GitHubRepo] {
+        var allRepos: [GitHubRepo] = []
+        var page = 1
+
+        while true {
+            let request = try makeRequest(
+                path: "/user/repos",
+                queryItems: [
+                    URLQueryItem(name: "per_page", value: "100"),
+                    URLQueryItem(name: "page", value: "\(page)"),
+                    URLQueryItem(name: "sort", value: "updated"),
+                ]
+            )
+            let (data, response) = try await performRequest(request)
+            try checkHTTPResponse(response, data: data)
+            let repos = try decoder.decode([GitHubRepo].self, from: data)
+            allRepos.append(contentsOf: repos)
+            if repos.count < 100 { break }
+            page += 1
+            if page > 5 { break } // Safety cap at 500 repos
+        }
+        return allRepos
+    }
+
     /// Fetch the latest workflow run for a repo's default branch.
     func fetchLatestWorkflowRun(repo: MonitoredRepo) async throws -> WorkflowRun? {
         let request = try makeRequest(

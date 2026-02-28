@@ -50,7 +50,8 @@ struct GitHubUser: Decodable {
     let id: Int
 }
 
-struct GitHubRepo: Decodable {
+struct GitHubRepo: Decodable, Identifiable {
+    var id: String { fullName }
     let fullName: String
     let defaultBranch: String
 

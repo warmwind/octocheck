@@ -1,15 +1,19 @@
 import SwiftUI
 import ServiceManagement
+import Combine
 
 @MainActor
 final class SettingsViewModel: ObservableObject {
+    static let shared = SettingsViewModel()
+
     @Published var token: String = ""
     @Published var validatedUser: String?
     @Published var isValidating = false
     @Published var tokenError: String?
 
-    @Published var newRepoInput: String = "" // "owner/name" format
-    @Published var isAddingRepo = false
+    @Published var availableRepos: [GitHubRepo] = []
+    @Published var isLoadingRepos = false
+    @Published var repoSearchText: String = ""
     @Published var repoError: String?
 
     @Published var pollingInterval: Double = Constants.Defaults.pollingInterval
@@ -17,12 +21,14 @@ final class SettingsViewModel: ObservableObject {
     @Published var notificationsEnabled = true
 
     private let repoStore = RepoStore.shared
+    private var repoStoreSubscription: AnyCancellable?
 
-    var repos: [MonitoredRepo] {
-        repoStore.repos
-    }
+    @Published var repos: [MonitoredRepo] = []
 
-    init() {
+    private init() {
+        repos = repoStore.repos
+        repoStoreSubscription = repoStore.$repos
+            .assign(to: \.repos, on: self)
         // Load existing token presence (don't show the actual token)
         if KeychainService.shared.loadPAT() != nil {
             validatedUser = "Authenticated" // Will be updated on validate
@@ -53,8 +59,9 @@ final class SettingsViewModel: ObservableObject {
                 token = "" // Clear from memory
                 tokenError = nil
 
-                // Start polling after successful auth
+                // Start polling and load repos after successful auth
                 PollingService.shared.startPolling()
+                loadAvailableRepos()
             } catch {
                 validatedUser = nil
                 tokenError = error.localizedDescription
@@ -70,37 +77,41 @@ final class SettingsViewModel: ObservableObject {
         PollingService.shared.stopPolling()
     }
 
-    func addRepo() {
-        let input = newRepoInput.trimmingCharacters(in: .whitespacesAndNewlines)
-        let parts = input.split(separator: "/")
-        guard parts.count == 2 else {
-            repoError = "Enter repo as owner/name"
-            return
+    /// Repos filtered by search text, excluding already-monitored ones
+    var filteredAvailableRepos: [GitHubRepo] {
+        let monitoredIDs = Set(repos.map { $0.fullName })
+        let unmonitored = availableRepos.filter { !monitoredIDs.contains($0.fullName) }
+        guard !repoSearchText.isEmpty else { return unmonitored }
+        return unmonitored.filter {
+            $0.fullName.localizedCaseInsensitiveContains(repoSearchText)
         }
+    }
 
-        let owner = String(parts[0])
-        let name = String(parts[1])
-        isAddingRepo = true
+    func loadAvailableRepos() {
+        guard !isLoadingRepos else { return }
+        isLoadingRepos = true
         repoError = nil
 
         Task {
             do {
-                let repoInfo = try await GitHubAPIService.shared.fetchRepoInfo(owner: owner, name: name)
-                let repo = MonitoredRepo(
-                    owner: owner,
-                    name: name,
-                    defaultBranch: repoInfo.defaultBranch
-                )
-                repoStore.add(repo)
-                newRepoInput = ""
-                repoError = nil
-                // Trigger a refresh
-                PollingService.shared.refreshNow()
+                availableRepos = try await GitHubAPIService.shared.fetchUserRepos()
             } catch {
                 repoError = error.localizedDescription
             }
-            isAddingRepo = false
+            isLoadingRepos = false
         }
+    }
+
+    func addRepo(_ ghRepo: GitHubRepo) {
+        let parts = ghRepo.fullName.split(separator: "/")
+        guard parts.count == 2 else { return }
+        let repo = MonitoredRepo(
+            owner: String(parts[0]),
+            name: String(parts[1]),
+            defaultBranch: ghRepo.defaultBranch
+        )
+        repoStore.add(repo)
+        PollingService.shared.refreshNow()
     }
 
     func removeRepo(_ repo: MonitoredRepo) {

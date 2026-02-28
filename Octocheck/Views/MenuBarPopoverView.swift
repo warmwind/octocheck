@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MenuBarPopoverView: View {
     @StateObject private var viewModel = MenuBarViewModel()
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -77,19 +78,12 @@ struct MenuBarPopoverView: View {
 
                 Spacer()
 
-                if #available(macOS 14.0, *) {
-                    SettingsLink {
-                        Text("Settings")
-                            .font(.system(size: 12))
-                    }
-                    .buttonStyle(.plain)
-                } else {
-                    Button("Settings") {
-                        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-                    }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 12))
+                Button("Settings") {
+                    NSApp.activate(ignoringOtherApps: true)
+                    openWindow(id: "settings")
                 }
+                .buttonStyle(.plain)
+                .font(.system(size: 12))
 
                 Button("Quit") {
                     NSApplication.shared.terminate(nil)
