@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 @main
@@ -10,7 +11,11 @@ struct OctocheckApp: App {
         MenuBarExtra {
             MenuBarPopoverView()
         } label: {
-            Image(systemName: pollingService.aggregateStatus.menuBarSymbol)
+            let status = pollingService.aggregateStatus
+            Image(nsImage: coloredMenuBarImage(
+                systemName: status.sfSymbol,
+                color: status.nsColor
+            ))
         }
         .menuBarExtraStyle(.window)
 
@@ -20,6 +25,23 @@ struct OctocheckApp: App {
         .defaultSize(width: 480, height: 360)
         .windowResizability(.contentSize)
     }
+}
+
+private func coloredMenuBarImage(systemName: String, color: NSColor) -> NSImage {
+    let config = NSImage.SymbolConfiguration(pointSize: 18, weight: .regular)
+    let symbol = NSImage(systemSymbolName: systemName, accessibilityDescription: nil)!
+        .withSymbolConfiguration(config)!
+
+    // Rasterize eagerly so the color is baked into actual pixels
+    let image = NSImage(size: symbol.size)
+    image.lockFocus()
+    symbol.draw(in: NSRect(origin: .zero, size: symbol.size))
+    color.set()
+    NSRect(origin: .zero, size: symbol.size).fill(using: .sourceAtop)
+    image.unlockFocus()
+
+    image.isTemplate = false
+    return image
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {

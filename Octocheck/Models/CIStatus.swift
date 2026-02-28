@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 enum CIStatus: String, Codable, CaseIterable {
@@ -8,8 +9,8 @@ enum CIStatus: String, Codable, CaseIterable {
 
     var sfSymbol: String {
         switch self {
-        case .success:  return "checkmark.circle.fill"
-        case .failure:  return "xmark.circle.fill"
+        case .success:  return "checkmark.circle"
+        case .failure:  return "xmark.circle"
         case .running:  return "arrow.triangle.2.circlepath"
         case .unknown:  return "questionmark.circle"
         }
@@ -21,6 +22,15 @@ enum CIStatus: String, Codable, CaseIterable {
         case .failure:  return .red
         case .running:  return .orange
         case .unknown:  return .gray
+        }
+    }
+
+    var nsColor: NSColor {
+        switch self {
+        case .success:  return .systemGreen
+        case .failure:  return .systemRed
+        case .running:  return .systemOrange
+        case .unknown:  return .systemGray
         }
     }
 
@@ -36,10 +46,10 @@ enum CIStatus: String, Codable, CaseIterable {
     /// Menu bar icon — uses distinct shapes so template rendering works without color.
     var menuBarSymbol: String {
         switch self {
-        case .success:  return "checkmark.circle"
-        case .failure:  return "xmark.circle"
-        case .running:  return "arrow.triangle.2.circlepath"
-        case .unknown:  return "questionmark.circle"
+        case .success:  return "checkmark.diamond"
+        case .failure:  return "xmark.diamond"
+        case .running:  return "hourglass"
+        case .unknown:  return "minus.diamond"
         }
     }
 
