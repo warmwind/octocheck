@@ -15,6 +15,7 @@ mkdir -p "${APP_BUNDLE}/Contents/MacOS"
 mkdir -p "${APP_BUNDLE}/Contents/Resources"
 
 cp "${BUILD_DIR}/${APP_NAME}" "${APP_BUNDLE}/Contents/MacOS/${APP_NAME}"
+cp AppIcon.icns "${APP_BUNDLE}/Contents/Resources/AppIcon.icns"
 
 echo "Code signing..."
 codesign --force --sign - "${APP_BUNDLE}"
@@ -42,6 +43,8 @@ cat > "${APP_BUNDLE}/Contents/Info.plist" << PLIST
     <string>13.0</string>
     <key>LSUIElement</key>
     <true/>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>NSHighResolutionCapable</key>
     <true/>
 </dict>
