@@ -33,17 +33,11 @@ Click the icon to see a breakdown of each repo and branch, open any repo's Actio
 
 ## Getting Started
 
-### Quick Start (Pre-built)
+### Download
 
-A pre-built `Octocheck.app` is included in the repo. Just clone and run:
+Download the latest `Octocheck.zip` from the [Releases page](https://github.com/warmwind/octocheck/releases), unzip it, and double-click `Octocheck.app` to run.
 
-```bash
-git clone https://github.com/warmwind/octocheck.git
-cd octocheck
-open Octocheck.app
-```
-
-> **Note:** macOS may show a security prompt since the app is unsigned. Go to **System Settings → Privacy & Security** and click **Open Anyway**.
+> **Note:** macOS may show a security prompt since the app is unsigned. Right-click the app → **Open**, or go to **System Settings → Privacy & Security** and click **Open Anyway**.
 
 ### Build from Source
 
