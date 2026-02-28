@@ -28,7 +28,21 @@ Click the icon to see a breakdown of each repo, open any repo's Actions page in 
 
 ## Getting Started
 
-### Build & Run
+### Quick Start (Pre-built)
+
+A pre-built `Octocheck.app` is included in the repo. Just clone and run:
+
+```bash
+git clone https://github.com/yourname/Octocheck.git
+cd Octocheck
+open Octocheck.app
+```
+
+> **Note:** macOS may show a security prompt since the app is unsigned. Go to **System Settings → Privacy & Security** and click **Open Anyway**.
+
+### Build from Source
+
+If you prefer to build it yourself:
 
 ```bash
 git clone https://github.com/yourname/Octocheck.git

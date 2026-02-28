@@ -1,5 +1,4 @@
 .build/
-Octocheck.app/
 .swiftpm/
 *.xcodeproj/
 xcuserdata/
