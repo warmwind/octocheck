@@ -2,6 +2,7 @@ import Foundation
 
 enum Constants {
     static let appName = "Octocheck"
+    static let appVersion = "1.0.0"
     static let bundleID = "com.octocheck.app"
 
     enum API {

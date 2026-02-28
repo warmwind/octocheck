@@ -10,6 +10,9 @@ struct MenuBarPopoverView: View {
             HStack {
                 Text("Octocheck")
                     .font(.system(size: 14, weight: .semibold))
+                Text("v\(Constants.appVersion)")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
                 Spacer()
                 Text("Updated \(viewModel.lastUpdatedText)")
                     .font(.system(size: 10))
