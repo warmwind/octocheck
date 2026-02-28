@@ -5,6 +5,7 @@ struct MonitoredRepo: Codable, Identifiable, Equatable {
     let owner: String
     let name: String
     var branches: [String]
+    var workflowName: String
 
     var fullName: String { "\(owner)/\(name)" }
 
@@ -23,19 +24,21 @@ struct MonitoredRepo: Codable, Identifiable, Equatable {
     // MARK: - Migration from old format
 
     enum CodingKeys: String, CodingKey {
-        case owner, name, branches, defaultBranch
+        case owner, name, branches, defaultBranch, workflowName
     }
 
-    init(owner: String, name: String, branches: [String]) {
+    init(owner: String, name: String, branches: [String], workflowName: String = Constants.Defaults.workflowName) {
         self.owner = owner
         self.name = name
         self.branches = branches
+        self.workflowName = workflowName
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         owner = try container.decode(String.self, forKey: .owner)
         name = try container.decode(String.self, forKey: .name)
+        workflowName = (try? container.decode(String.self, forKey: .workflowName)) ?? Constants.Defaults.workflowName
 
         // Try new format first, fall back to old defaultBranch
         if let branches = try? container.decode([String].self, forKey: .branches) {
@@ -52,5 +55,6 @@ struct MonitoredRepo: Codable, Identifiable, Equatable {
         try container.encode(owner, forKey: .owner)
         try container.encode(name, forKey: .name)
         try container.encode(branches, forKey: .branches)
+        try container.encode(workflowName, forKey: .workflowName)
     }
 }

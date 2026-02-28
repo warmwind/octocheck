@@ -140,6 +140,12 @@ final class RepoStore: ObservableObject {
         save()
     }
 
+    func updateWorkflowName(for repoID: String, workflowName: String) {
+        guard let index = repos.firstIndex(where: { $0.id == repoID }) else { return }
+        repos[index].workflowName = workflowName
+        save()
+    }
+
     private func save() {
         if let data = try? JSONEncoder().encode(repos) {
             UserDefaults.standard.set(data, forKey: Constants.UserDefaultsKeys.monitoredRepos)

@@ -12,6 +12,7 @@ struct WorkflowRunsResponse: Decodable {
 
 struct WorkflowRun: Decodable {
     let id: Int
+    let workflowId: Int
     let name: String?
     let status: String     // queued, in_progress, completed, etc.
     let conclusion: String? // success, failure, cancelled, skipped, etc.
@@ -21,6 +22,7 @@ struct WorkflowRun: Decodable {
 
     enum CodingKeys: String, CodingKey {
         case id, name, status, conclusion
+        case workflowId = "workflow_id"
         case htmlURL = "html_url"
         case createdAt = "created_at"
         case updatedAt = "updated_at"

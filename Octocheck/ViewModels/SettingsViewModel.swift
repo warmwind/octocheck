@@ -136,6 +136,13 @@ final class SettingsViewModel: ObservableObject {
         PollingService.shared.refreshNow()
     }
 
+    func updateWorkflowName(for repo: MonitoredRepo, workflowName: String) {
+        let name = workflowName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return }
+        repoStore.updateWorkflowName(for: repo.id, workflowName: name)
+        PollingService.shared.refreshNow()
+    }
+
     func loadBranches(for repo: MonitoredRepo) {
         guard isLoadingBranches[repo.id] != true else { return }
         isLoadingBranches[repo.id] = true

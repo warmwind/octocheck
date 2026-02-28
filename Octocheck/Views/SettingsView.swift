@@ -130,6 +130,15 @@ struct SettingsView: View {
                                     }
                                 )
                             ) {
+                                // Workflow name
+                                WorkflowNameView(
+                                    workflowName: repo.workflowName,
+                                    onSave: { name in
+                                        viewModel.updateWorkflowName(for: repo, workflowName: name)
+                                    }
+                                )
+                                .padding(.leading, 8)
+
                                 // Tracked branches
                                 ForEach(repo.branches, id: \.self) { branch in
                                     HStack {
@@ -293,5 +302,34 @@ private struct BranchInputView: View {
         guard !name.isEmpty else { return }
         onAdd(name)
         branchName = ""
+    }
+}
+
+// MARK: - Workflow Name Editor
+
+private struct WorkflowNameView: View {
+    let workflowName: String
+    let onSave: (String) -> Void
+
+    @State private var editedName: String = ""
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "gearshape")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+            Text("Workflow:")
+                .font(.callout)
+            TextField("CI", text: $editedName)
+                .textFieldStyle(.roundedBorder)
+                .font(.callout)
+                .frame(maxWidth: 150)
+                .onSubmit {
+                    onSave(editedName)
+                }
+        }
+        .onAppear {
+            editedName = workflowName
+        }
     }
 }

@@ -96,19 +96,22 @@ final class GitHubAPIService {
         return allRepos
     }
 
-    /// Fetch the latest workflow run for a repo on a specific branch.
+    /// Fetch the latest workflow run matching the tracked workflow name for a repo on a specific branch.
     func fetchLatestWorkflowRun(repo: MonitoredRepo, branch: String) async throws -> WorkflowRun? {
+        let workflowName = repo.workflowName
+
         let request = try makeRequest(
             path: "/repos/\(repo.owner)/\(repo.name)/actions/runs",
             queryItems: [
                 URLQueryItem(name: "branch", value: branch),
-                URLQueryItem(name: "per_page", value: "1"),
+                URLQueryItem(name: "per_page", value: "20"),
             ]
         )
         let (data, response) = try await performRequest(request)
         try checkHTTPResponse(response, data: data)
         let result = try decoder.decode(WorkflowRunsResponse.self, from: data)
-        return result.workflowRuns.first
+        // Return the first (most recent) run whose name matches the tracked workflow
+        return result.workflowRuns.first { $0.name == workflowName }
     }
 
     /// Fetch CI status for a single repo+branch.

@@ -27,5 +27,6 @@ enum Constants {
         static let pollingInterval: TimeInterval = 300 // 5 minutes
         static let minPollingInterval: TimeInterval = 60
         static let maxPollingInterval: TimeInterval = 1800
+        static let workflowName = "CI"
     }
 }
